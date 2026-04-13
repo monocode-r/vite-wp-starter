@@ -1,0 +1,15 @@
+node_modules
+.vite
+.pnpm-debug.log*
+.vscode
+.DS_Store
+.env
+
+# wp-env（.env から自動生成）
+.wp-env.json
+
+# Vite ビルド出力（テーマ内 assets/）
+themes/*/assets
+
+# wp-env uploads
+uploads

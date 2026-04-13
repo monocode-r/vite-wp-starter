@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "WebFetch(domain:note.com)",
+      "Bash(node /Users/ryu/Desktop/vite_wp/scripts/generate-wp-env.mjs)"
+    ]
+  }
+}

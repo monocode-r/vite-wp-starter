@@ -1,0 +1,6 @@
+themes/*/assets/
+node_modules/
+pnpm-lock.yaml
+uploads/
+src/images/
+

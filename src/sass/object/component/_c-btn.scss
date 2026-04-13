@@ -1,0 +1,15 @@
+@use 'global' as *;
+
+.c-btn {
+  font-size: rem(24);
+  background-color: var(--color-text);
+  color: var(--color-surface);
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  display: inline-block;
+  &:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+}

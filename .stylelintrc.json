@@ -1,0 +1,19 @@
+{
+    "extends": ["stylelint-config-standard-scss"],
+    "rules": {
+      "selector-class-pattern": "^((l|c|p|u|js|is|has)-[a-zA-Z][a-zA-Z0-9]*(-[a-zA-Z0-9]+)*(__[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)?(--[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)?|--[a-z][a-zA-Z0-9]*)$",
+      "at-rule-no-unknown": null,
+      "scss/at-rule-no-unknown": true,
+      "alpha-value-notation": null,
+      "color-function-notation": null,
+      "import-notation": null,
+      "media-feature-range-notation": null,
+      "font-family-name-quotes": null,
+      "value-keyword-case": null,
+      "property-no-vendor-prefix": null,
+      "scss/dollar-variable-pattern": null,
+      "rule-empty-line-before": null,
+      "at-rule-empty-line-before": null
+    },
+    "ignoreFiles": ["themes/*/assets/**", "node_modules/**"]
+  }

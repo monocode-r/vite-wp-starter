@@ -1,0 +1,43 @@
+@use 'sass:math';
+@use 'sass:map';
+
+// インナー幅（Sass 計算・vw 基準用）
+$innerWidth: 1200px;
+
+// 余白（Sass 計算用・--padding-* へミラー）
+$padding-pc: 25px;
+$padding-sp: 20px;
+
+:root {
+  --font-family-base: 'Noto Sans JP', serif;
+  --color-text: #333;
+  --color-surface: #fff;
+  --inner-width: #{$innerWidth};
+  --padding-pc: #{$padding-pc};
+  --padding-sp: #{$padding-sp};
+}
+
+// ブレイクポイント
+$design-approach: 'sp'; // モバイルファースト：sp / PCファースト：pc
+
+$breakpoints: (
+  sm: 500,
+  md: 768,
+  lg: 1024,
+  xl: 1440,
+);
+
+// メディアクエリ
+@mixin mq($mediaquery: md) {
+  @if $design-approach == 'sp' {
+    // モバイルファースト: min-width
+    @media screen and (min-width: #{map.get($breakpoints,$mediaquery)}px) {
+      @content;
+    }
+  } @else if $design-approach == 'pc' {
+    // デスクトップファースト: max-width
+    @media screen and (max-width: #{map.get($breakpoints,$mediaquery) - 1}px) {
+      @content;
+    }
+  }
+}

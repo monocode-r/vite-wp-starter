@@ -1,0 +1,57 @@
+@use 'global' as *;
+
+// インナー幅＋余白
+$breakpointInner: $innerWidth + strip-unit($padding-pc) * 2;
+
+// ルートフォント設定（特異性を下げるため :where）
+:where(html) {
+  // 376px ~ 767px
+  font-size: 100%;
+
+  // ~ 375px
+  @media (max-width: 375px) {
+    font-size: vw(375, 16);
+  }
+
+  // 768px ~ インナー幅＋余白
+  @include mq(md) {
+    font-size: vw(strip-unit($breakpointInner), 16);
+  }
+
+  // インナー幅＋余白 ~
+  @media (min-width: $breakpointInner) {
+    font-size: 100%;
+  }
+}
+
+// フォント、カラー設定
+:where(body) {
+  font-family: var(--font-family-base);
+  color: var(--color-text);
+  text-size-adjust: 100%;
+  overflow-wrap: anywhere;
+}
+
+// ホバー
+:where(a, button) {
+  @include mq(md) {
+    transition: 0.3s;
+    &:hover {
+      opacity: 0.7;
+      cursor: pointer;
+    }
+  }
+}
+
+// pcでリンク無効
+:where(a[href*='tel:']) {
+  @include mq(md) {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+  }
+}
+
+:where(:any-link, button, [type='button'], [type='reset'], [type='submit'], label[for], select, summary, [role='tab'], [role='button']) {
+  cursor: pointer;
+}
