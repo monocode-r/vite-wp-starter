@@ -105,6 +105,18 @@ function theme_setup() {
 }
 add_action( 'after_setup_theme', 'theme_setup' );
 
+function theme_widgets_init() {
+    register_sidebar( [
+        'name'          => 'サイドバー',
+        'id'            => 'sidebar-1',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h3 class="widget__title">',
+        'after_title'   => '</h3>',
+    ] );
+}
+add_action( 'widgets_init', 'theme_widgets_init' );
+
 // ============================================================
 // ACF JSON 同期
 // ============================================================

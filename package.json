@@ -8,7 +8,6 @@
     "build": "vite build && node scripts/optimize-images.mjs",
     "build:images-both": "vite build && IMAGE_OUTPUT_MODE=both node scripts/optimize-images.mjs",
     "build:images-raster": "vite build && IMAGE_OUTPUT_MODE=raster-only node scripts/optimize-images.mjs",
-    "preview": "vite preview",
     "optimize:images": "node scripts/optimize-images.mjs",
     "format": "prettier --write 'src/**/*.{scss,js}' '**/*.php'",
     "lint:js": "eslint src/js",

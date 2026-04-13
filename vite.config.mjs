@@ -122,6 +122,7 @@ function wpDevImages() {
 // ============================================================
 
 export default defineConfig({
+  base: './',
   root: __dirname,
   publicDir: false,
   plugins: [
