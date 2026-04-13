@@ -1,0 +1,57 @@
+@use 'global' as *;
+
+// ============================================================
+// c-post-nav
+// 詳細ページ用 前後ナビゲーション
+// ============================================================
+
+.c-post-nav {
+  margin-top: 6.4rem;
+  border-top: 1px solid #eee;
+  padding-top: 3.2rem;
+}
+
+.c-post-nav .nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4rem;
+}
+
+.c-post-nav .nav-previous,
+.c-post-nav .nav-next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.c-post-nav .nav-label {
+  display: block;
+  font-size: 1.2rem;
+  color: #999;
+  letter-spacing: 0.05em;
+}
+
+.c-post-nav .nav-title {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.5;
+  transition: opacity 0.2s ease;
+}
+
+.c-post-nav a:hover .nav-title {
+  opacity: 0.6;
+}
+
+@include mq(md) {
+  .c-post-nav .nav-links {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .c-post-nav .nav-next {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
