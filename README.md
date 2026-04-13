@@ -90,6 +90,31 @@ Claude Code で `/font` を実行してください。
 | CDN | `/font "Noto Sans JP" "400,700"` | `<link>` タグを表示 |
 | ローカル | `/font --local "Noto Sans JP" "400,700"` | woff2 DL + `_font-face.scss` 生成 |
 
+## 自動デプロイ（GitHub Actions）
+
+`main` ブランチへ push すると自動でビルド → FTP デプロイが実行されます。
+
+### 初回セットアップ
+
+GitHub リポジトリの **Settings > Secrets and variables > Actions** に以下を登録してください。
+
+#### Secrets（機密情報）
+
+| 名前 | 値の例 | 説明 |
+|------|--------|------|
+| `FTP_SERVER` | `sv12345.xserver.jp` | FTP サーバーホスト名 |
+| `FTP_USERNAME` | `user@example.com` | FTP ユーザー名 |
+| `FTP_PASSWORD` | `••••••••` | FTP パスワード |
+
+#### Variables（非機密情報）
+
+| 名前 | 値の例 | 説明 |
+|------|--------|------|
+| `THEME_NAME` | `my-theme` | テーマフォルダ名（`.env` の値と合わせる） |
+| `FTP_THEME_DIR` | `public_html/wp-content/themes/my-theme/` | サーバー上のテーマパス（末尾 `/` 必須） |
+
+> SFTP（ポート22）を使う場合は `.github/workflows/deploy.yml` の `FTP-Deploy-Action` に `protocol: sftp` を追加してください。
+
 ## 備考
 
 - PostCSS: `postcss-combine-media-query` → `css-declaration-sorter` → `postcss-preset-env` → `autoprefixer`

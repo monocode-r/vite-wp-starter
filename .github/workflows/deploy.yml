@@ -1,0 +1,67 @@
+# ============================================================
+# WordPress テーマ 自動デプロイ
+#
+# トリガー: main ブランチへの push
+# 処理:     pnpm build → FTP でサーバーへ転送
+#
+# GitHub に以下を登録してから使用してください:
+#
+# [Settings > Secrets and variables > Actions]
+#
+#   Secrets（機密情報）:
+#     FTP_SERVER    : FTP サーバーホスト名 (例: sv12345.xserver.jp)
+#     FTP_USERNAME  : FTP ユーザー名
+#     FTP_PASSWORD  : FTP パスワード
+#
+#   Variables（非機密情報）:
+#     THEME_NAME    : テーマフォルダ名 (例: my-theme)
+#     FTP_THEME_DIR : サーバー上のテーマパス
+#                     (例: public_html/wp-content/themes/my-theme/)
+# ============================================================
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          THEME_NAME: ${{ vars.THEME_NAME }}
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./themes/${{ vars.THEME_NAME }}/
+          server-dir: ${{ vars.FTP_THEME_DIR }}
+          exclude: |
+            **/.gitkeep
+            **/assets/hot
+            **/acf-json/.gitkeep
