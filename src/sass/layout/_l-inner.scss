@@ -13,8 +13,3 @@
   }
 }
 
-.l-inner.--sm {
-  @include mq(md) {
-    max-width: rem(1210);
-  }
-}
