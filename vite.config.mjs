@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, normalizePath, loadEnv } from 'vite';
 import sassGlobImports from 'vite-plugin-sass-glob-import';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { runImagePipeline, resolveImageOutputMode } from './scripts/lib/image-pipeline.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sassRoot = normalizePath(path.resolve(__dirname, 'src/sass'));
@@ -87,30 +88,17 @@ function viteWordPressHot() {
 function wpDevImages() {
   const srcDir = path.resolve(__dirname, 'src/images');
   const destDir = path.resolve(assetsDir, 'images');
-
-  function copyRecursive(src, dest) {
-    if (!fs.existsSync(src)) return;
-    fs.mkdirSync(dest, { recursive: true });
-    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-      const srcPath = path.join(src, entry.name);
-      const destPath = path.join(dest, entry.name);
-      if (entry.isDirectory()) {
-        copyRecursive(srcPath, destPath);
-      } else {
-        fs.copyFileSync(srcPath, destPath);
-      }
-    }
-  }
+  const mode = resolveImageOutputMode();
 
   return {
     name: 'wp-dev-images',
     apply: 'serve',
-    configureServer(server) {
-      copyRecursive(srcDir, destDir);
+    async configureServer(server) {
+      await runImagePipeline({ sourceDir: srcDir, outDir: destDir, mode, label: 'wp-dev-images' });
       server.watcher.add(srcDir);
-      server.watcher.on('all', (_event, filePath) => {
+      server.watcher.on('all', async (_event, filePath) => {
         if (normalizePath(filePath).startsWith(normalizePath(srcDir) + '/')) {
-          copyRecursive(srcDir, destDir);
+          await runImagePipeline({ sourceDir: srcDir, outDir: destDir, mode, label: 'wp-dev-images' });
         }
       });
     },
