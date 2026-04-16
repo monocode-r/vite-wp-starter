@@ -19,6 +19,11 @@ const wpEnv = {
   themes: [`./themes/${themeName}`],
   plugins: [
     'https://downloads.wordpress.org/plugin/advanced-custom-fields.latest-stable.zip',
+    'https://downloads.wordpress.org/plugin/wp-multibyte-patch.latest-stable.zip',
+    'https://downloads.wordpress.org/plugin/custom-post-type-ui.latest-stable.zip',
+    'https://downloads.wordpress.org/plugin/query-monitor.latest-stable.zip',
+    'https://downloads.wordpress.org/plugin/duplicate-post.latest-stable.zip',
+    'https://downloads.wordpress.org/plugin/contact-form-7.latest-stable.zip',
   ],
   config: {
     WP_DEBUG: true,
@@ -29,6 +34,7 @@ const wpEnv = {
   mappings: {
     'wp-content/uploads': './uploads',
   },
+  afterSetup: `wp language core install ja && wp site switch-language ja && wp theme activate ${themeName}`,
 };
 
 const outPath = path.join(projectRoot, '.wp-env.json');
