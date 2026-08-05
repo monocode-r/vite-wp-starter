@@ -8,7 +8,7 @@
  * Vite 開発サーバーの URL を取得（起動中なら URL、停止中なら false）
  */
 function theme_vite_dev_url() {
-    $hot_file = get_template_directory() . '/assets/hot';
+    $hot_file = get_template_directory() . '/.vite-hot';
     if ( file_exists( $hot_file ) ) {
         return trim( file_get_contents( $hot_file ) );
     }

@@ -48,11 +48,13 @@ function sassPartialHmr() {
 }
 
 /**
- * WordPress 連携用: 開発サーバーの起動時に assets/hot ファイルを作成し、
+ * WordPress 連携用: 開発サーバーの起動時に .vite-hot ファイルを作成し、
  * PHP 側で Vite dev server の URL を検出できるようにする。
  */
 function viteWordPressHot() {
-  const hotFilePath = path.resolve(assetsDir, 'hot');
+  // assets/ の中に置くと本番ビルド（emptyOutDir）で消えて開発サーバーとの接続が切れるため、
+  // ビルド出力の外に置く
+  const hotFilePath = path.resolve(themeDir, '.vite-hot');
   return {
     name: 'vite-wordpress-hot',
     configureServer(server) {
@@ -77,6 +79,27 @@ function viteWordPressHot() {
       process.on('SIGTERM', () => {
         cleanup();
         process.exit();
+      });
+    },
+  };
+}
+
+/**
+ * PHP テンプレートは Vite のモジュールグラフに載らないため、保存しても何も起きない。
+ * 変更を監視してブラウザにフルリロードを送る（browsersync 相当の挙動）。
+ */
+function phpFullReload() {
+  return {
+    name: 'php-full-reload',
+    apply: 'serve',
+    configureServer(server) {
+      server.watcher.add(path.resolve(themeDir, '**/*.php'));
+      // template-parts の新規追加・削除でもリロードしたいので change だけにしない
+      ['change', 'add', 'unlink'].forEach((event) => {
+        server.watcher.on(event, (file) => {
+          if (!file.endsWith('.php')) return;
+          server.ws.send({ type: 'full-reload', path: '*' });
+        });
       });
     },
   };
@@ -117,6 +140,7 @@ export default defineConfig({
     sassGlobImports(),
     sassPartialHmr(),
     viteWordPressHot(),
+    phpFullReload(),
     wpDevImages(),
     ...viteStaticCopy({
       targets: [

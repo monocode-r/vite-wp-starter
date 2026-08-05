@@ -11,5 +11,8 @@ node_modules
 # Vite ビルド出力（テーマ内 assets/）
 themes/*/assets
 
+# Vite 開発サーバーの起動中だけ存在するマーカー
+themes/*/.vite-hot
+
 # wp-env uploads
 uploads
