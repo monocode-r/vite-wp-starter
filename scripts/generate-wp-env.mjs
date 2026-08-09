@@ -36,7 +36,15 @@ const wpEnv = {
   mappings: {
     'wp-content/uploads': './uploads',
   },
-  afterSetup: `wp language core install ja && wp site switch-language ja && wp theme activate ${themeName}`,
+  // wp-env のライフサイクルスクリプトはホスト側のシェルで実行されるため、
+  // コンテナ内の wp-cli は wp-env run cli 経由で呼ぶ
+  lifecycleScripts: {
+    afterStart: [
+      'wp-env run cli wp language core install ja',
+      'wp-env run cli wp site switch-language ja',
+      `wp-env run cli wp theme activate ${themeName}`,
+    ].join(' && '),
+  },
 };
 
 const outPath = path.join(projectRoot, '.wp-env.json');
