@@ -12,10 +12,12 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const env = loadEnv('', projectRoot, '');
 const themeName = env.THEME_NAME || 'my-theme';
+const wpPort = Number(env.WP_PORT) || 8888;
 
 const wpEnv = {
   core: null,
   phpVersion: '8.2',
+  port: wpPort,
   themes: [`./themes/${themeName}`],
   plugins: [
     'https://downloads.wordpress.org/plugin/advanced-custom-fields.latest-stable.zip',
@@ -39,4 +41,6 @@ const wpEnv = {
 
 const outPath = path.join(projectRoot, '.wp-env.json');
 fs.writeFileSync(outPath, JSON.stringify(wpEnv, null, 2) + '\n');
-console.log(`[generate-wp-env] テーマ: ${themeName} → .wp-env.json を生成しました`);
+console.log(
+  `[generate-wp-env] テーマ: ${themeName} / ポート: ${wpPort} → .wp-env.json を生成しました`,
+);

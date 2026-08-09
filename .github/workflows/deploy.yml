@@ -63,5 +63,5 @@ jobs:
           server-dir: ${{ vars.FTP_THEME_DIR }}
           exclude: |
             **/.gitkeep
-            **/assets/hot
+            **/.vite-hot
             **/acf-json/.gitkeep

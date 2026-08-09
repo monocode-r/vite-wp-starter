@@ -3,18 +3,23 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, normalizePath, loadEnv } from 'vite';
 import sassGlobImports from 'vite-plugin-sass-glob-import';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { runImagePipeline, resolveImageOutputMode } from './scripts/lib/image-pipeline.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sassRoot = normalizePath(path.resolve(__dirname, 'src/sass'));
 const stylesScssPath = normalizePath(path.resolve(sassRoot, 'styles.scss'));
 
-// .env から THEME_NAME を取得
+// .env から設定を取得
 const env = loadEnv('', __dirname, '');
 const themeName = env.THEME_NAME || 'my-theme';
 const themeDir = path.resolve(__dirname, `themes/${themeName}`);
 const assetsDir = path.resolve(themeDir, 'assets');
+const imagesSrcDir = path.resolve(__dirname, 'src/images');
+const imagesOutDir = path.resolve(assetsDir, 'images');
+
+const devPort = Number(env.DEV_PORT) || 3000;
+const wpPort = Number(env.WP_PORT) || 8888;
+const devOrigin = `http://localhost:${devPort}`;
 
 // ============================================================
 // カスタムプラグイン
@@ -27,8 +32,9 @@ const assetsDir = path.resolve(themeDir, 'assets');
 function sassPartialHmr() {
   return {
     name: 'sass-partial-hmr',
+    apply: 'serve',
     configureServer(server) {
-      server.watcher.add(path.resolve(__dirname, 'src/sass'));
+      server.watcher.add(sassRoot);
     },
     handleHotUpdate({ file, server }) {
       if (!file.endsWith('.scss')) return;
@@ -57,8 +63,9 @@ function viteWordPressHot() {
   const hotFilePath = path.resolve(themeDir, '.vite-hot');
   return {
     name: 'vite-wordpress-hot',
+    apply: 'serve',
     configureServer(server) {
-      const { port = 3000, https } = server.config.server;
+      const { port = devPort, https } = server.config.server;
       const protocol = https ? 'https' : 'http';
       const url = `${protocol}://localhost:${port}`;
 
@@ -93,7 +100,7 @@ function phpFullReload() {
     name: 'php-full-reload',
     apply: 'serve',
     configureServer(server) {
-      server.watcher.add(path.resolve(themeDir, '**/*.php'));
+      server.watcher.add(themeDir);
       // template-parts の新規追加・削除でもリロードしたいので change だけにしない
       ['change', 'add', 'unlink'].forEach((event) => {
         server.watcher.on(event, (file) => {
@@ -106,23 +113,50 @@ function phpFullReload() {
 }
 
 /**
- * 開発時に src/images/ を themes/{THEME_NAME}/assets/images/ にコピーする。
+ * 画像を src/images/ → themes/{THEME_NAME}/assets/images/ へ最適化しながら出力する。
+ *
+ * 開発・本番で同じ `runImagePipeline` を通す（経路を1本にする）。
+ * 経路が分かれていると WebP 変換の有無やディレクトリ構造が dev / build でズレる。
  */
-function wpDevImages() {
-  const srcDir = path.resolve(__dirname, 'src/images');
-  const destDir = path.resolve(assetsDir, 'images');
+function wpImages() {
   const mode = resolveImageOutputMode();
+  let isBuild = false;
 
   return {
-    name: 'wp-dev-images',
-    apply: 'serve',
+    name: 'wp-images',
+    configResolved(config) {
+      isBuild = config.command === 'build';
+    },
     async configureServer(server) {
-      await runImagePipeline({ sourceDir: srcDir, outDir: destDir, mode, label: 'wp-dev-images' });
-      server.watcher.add(srcDir);
+      await runImagePipeline({
+        sourceDir: imagesSrcDir,
+        outDir: imagesOutDir,
+        mode,
+        label: 'wp-images:dev',
+      });
+      server.watcher.add(imagesSrcDir);
       server.watcher.on('all', async (_event, filePath) => {
-        if (normalizePath(filePath).startsWith(normalizePath(srcDir) + '/')) {
-          await runImagePipeline({ sourceDir: srcDir, outDir: destDir, mode, label: 'wp-dev-images' });
-        }
+        if (!normalizePath(filePath).startsWith(`${normalizePath(imagesSrcDir)}/`)) return;
+        await runImagePipeline({
+          sourceDir: imagesSrcDir,
+          outDir: imagesOutDir,
+          mode,
+          label: 'wp-images:dev',
+        });
+        server.ws.send({ type: 'full-reload', path: '*' });
+      });
+    },
+    async closeBundle() {
+      // dev サーバー終了時にも呼ばれるため、ビルド時だけ走らせる
+      if (!isBuild) return;
+      // emptyOutDir で assets/ ごと消えた後に走る。SCSS / JS から参照されて
+      // Vite が出力した画像を消さないよう clean はしない
+      await runImagePipeline({
+        sourceDir: imagesSrcDir,
+        outDir: imagesOutDir,
+        mode,
+        clean: false,
+        label: 'wp-images:build',
       });
     },
   };
@@ -136,44 +170,42 @@ export default defineConfig({
   base: './',
   root: __dirname,
   publicDir: false,
-  plugins: [
-    sassGlobImports(),
-    sassPartialHmr(),
-    viteWordPressHot(),
-    phpFullReload(),
-    wpDevImages(),
-    ...viteStaticCopy({
-      targets: [
-        {
-          src: 'src/images/**/*',
-          dest: 'images',
-        },
-      ],
-    }).filter((p) => p.apply === 'build'),
-  ],
+  plugins: [sassGlobImports(), sassPartialHmr(), viteWordPressHot(), phpFullReload(), wpImages()],
   server: {
-    port: 3000,
+    port: devPort,
     strictPort: true,
     cors: true,
+    // WordPress（別オリジン）から読み込むため、CSS 内の url() をオリジン込みで出力させる。
+    // 無いとセルフホストのフォント・画像が dev だけ 404 になる
+    origin: devOrigin,
+    open: `http://localhost:${wpPort}`,
+    watch: {
+      // ビルド出力（画像コピー先）を監視対象から外す
+      ignored: [`${normalizePath(assetsDir)}/**`],
+    },
   },
   css: {
     devSourcemap: true,
     postcss: path.resolve(__dirname, 'postcss.config.cjs'),
     preprocessorOptions: {
       scss: {
-        loadPaths: [path.resolve(__dirname, 'src/sass')],
-        includePaths: [path.resolve(__dirname, 'src/sass')],
+        loadPaths: [sassRoot],
         quietDeps: true,
       },
     },
   },
   build: {
-    outDir: path.resolve(themeDir, 'assets'),
+    outDir: assetsDir,
     emptyOutDir: true,
     cssCodeSplit: false,
     minify: false,
     cssMinify: false,
     sourcemap: false,
+    // browserslist（iOS >= 12 / Android >= 8）に合わせる。
+    // 既定のままだと iOS 12 に無い構文がそのまま出る
+    target: ['es2018', 'safari12', 'chrome70'],
+    // 小さい画像・フォントを base64 に埋め込ませない（納品後に差し替えられる形で残す）
+    assetsInlineLimit: 0,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'src/js/main.js'),

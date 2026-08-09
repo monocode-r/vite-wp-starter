@@ -34,11 +34,18 @@ async function pathExists(p) {
 }
 
 /**
- * @param {{ sourceDir: string, outDir: string, mode: 'webp-only' | 'both' | 'raster-only', label?: string }} opts
- * - 同一ディレクトリ（dist 最適化）: 上書き・webp-only 時は元ラスタ削除
- * - 別ディレクトリ（開発キャッシュ）: 出力先を一度空にしてから src 相当を再生成
+ * @param {{ sourceDir: string, outDir: string, mode: 'webp-only' | 'both' | 'raster-only', clean?: boolean, label?: string }} opts
+ * - 同一ディレクトリ（in-place 最適化）: 上書き・webp-only 時は元ラスタ削除
+ * - 別ディレクトリ: 既定では出力先を一度空にしてから src 相当を再生成する。
+ *   `clean: false` にすると出力先を消さない（ビルド時に Vite が出力した資産を残すため）
  */
-export async function runImagePipeline({ sourceDir, outDir, mode, label = 'image-pipeline' }) {
+export async function runImagePipeline({
+  sourceDir,
+  outDir,
+  mode,
+  clean = true,
+  label = 'image-pipeline',
+}) {
   const srcAbs = path.resolve(sourceDir);
   const outAbs = path.resolve(outDir);
   const separateRoots = srcAbs !== outAbs;
@@ -48,7 +55,7 @@ export async function runImagePipeline({ sourceDir, outDir, mode, label = 'image
     return;
   }
 
-  if (separateRoots) {
+  if (separateRoots && clean) {
     await rm(outAbs, { recursive: true, force: true });
     await mkdir(outAbs, { recursive: true });
   } else if (!(await pathExists(outAbs))) {
@@ -119,11 +126,11 @@ export async function runImagePipeline({ sourceDir, outDir, mode, label = 'image
     return;
   }
 
-  const rasters = await fg(['**/*.{jpg,jpeg,png}'], {
-    cwd: outAbs,
-    absolute: true,
-    onlyFiles: true,
-  });
+  // src から出力した分だけを対象にする。出力先を丸ごと拾うと、SCSS / JS 経由で
+  // Vite が出した画像まで WebP 化して webp-only では消してしまう
+  const rasters = rasterSvgRel
+    .filter((rel) => /\.(jpe?g|png)$/i.test(rel))
+    .map((rel) => path.join(outAbs, rel));
 
   for (const file of rasters) {
     const buf = await readFile(file);

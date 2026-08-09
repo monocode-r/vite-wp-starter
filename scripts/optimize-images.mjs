@@ -9,6 +9,7 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const env = loadEnv('', projectRoot, '');
 const themeName = env.THEME_NAME || 'my-theme';
+const srcImages = path.join(projectRoot, 'src/images');
 const assetsImages = path.join(projectRoot, `themes/${themeName}/assets/images`);
 
 async function pathExists(p) {
@@ -25,13 +26,14 @@ async function main() {
   console.log(`[optimize-images] テーマ: ${themeName}`);
   console.log(`[optimize-images] モード: ${mode}`);
 
-  if (!(await pathExists(assetsImages))) {
-    console.warn(`[optimize-images] ${themeName}/assets/images が無いためスキップします`);
+  if (!(await pathExists(srcImages))) {
+    console.warn('[optimize-images] src/images が無いためスキップします');
     return;
   }
 
+  // dev / build と同じ経路（src/images → assets/images）を単体で走らせる
   await runImagePipeline({
-    sourceDir: assetsImages,
+    sourceDir: srcImages,
     outDir: assetsImages,
     mode,
     label: 'optimize-images',
