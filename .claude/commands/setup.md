@@ -60,24 +60,27 @@
 >
 > ※ 制作会社ルールで @font-face 必須の場合は 2 を選択
 
+> ※ 日本語フォントをローカルに置くと1ウェイト約1MB（サブセット無し）になります。
+> サブセット化しないなら 1 を選んでください。
+
 方式が決まったら、使用するフォントを質問してください。
-fonts-list.txt の一覧を表示し、番号とウェイトを入力してもらいます。
+`~/.claude/scripts/fonts-list.txt` の一覧を表示し、番号とウェイトを入力してもらいます。
 複数フォント指定可能です（例: 日本語ゴシック + 欧文サンセリフ）。
 
+スターターはフォントを同梱していません（`src/fonts/` は空、`_font-face.scss` はコメントのみ）。
+どちらの方式でも、既存ファイルの削除作業は不要です。
+
 ### CDNの場合:
-- `src/html/index.html` の `<head>` に `<link>` タグを追加
-- `src/sass/global/_setting.scss` の `$font-main` を更新
-- `src/sass/foundation/_font-face.scss` は空にする
-- `src/fonts/` ディレクトリ内のフォントファイルを削除
+- `themes/{THEME_NAME}/header.php` の `<head>` に `<link>` タグを追加
+- `src/sass/global/_setting.scss` の `--font-family-base` を更新
 
 ### ローカルの場合:
 - `bash ~/.claude/scripts/download-fonts.sh --local "フォント名" "ウェイト"` を実行
-- `src/sass/global/_setting.scss` の `$font-main` を更新
-- 既存の `src/fonts/` 内の不要フォントを削除
+- `src/sass/global/_setting.scss` の `--font-family-base` を更新
 
-`$font-main` のフォールバック指定:
-- ゴシック系: `"フォント名", "欧文フォント名", sans-serif`
-- 明朝系: `"フォント名", "欧文フォント名", serif`
+`--font-family-base` のフォールバック指定:
+- ゴシック系: `'フォント名', '欧文フォント名', sans-serif`
+- 明朝系: `'フォント名', '欧文フォント名', serif`
 
 ---
 

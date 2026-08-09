@@ -9,7 +9,8 @@ $padding-pc: 25px;
 $padding-sp: 20px;
 
 :root {
-  --font-family-base: 'Noto Sans JP', serif;
+  // 案件のフォントが決まったら `/font` で置き換える（暫定はシステムフォント）
+  --font-family-base: system-ui, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', meiryo, sans-serif;
   --color-text: #333;
   --color-surface: #fff;
   --color-white: #fff;
