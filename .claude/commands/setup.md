@@ -60,8 +60,8 @@
 >
 > ※ 制作会社ルールで @font-face 必須の場合は 2 を選択
 
-> ※ 日本語フォントをローカルに置くと1ウェイト約1MB（サブセット無し）になります。
-> サブセット化しないなら 1 を選んでください。
+> ※ 2 は `--local`（unicode-range 分割）で取得します。1ウェイトあたり約120ファイルになりますが正常です。
+> ※ `--text`（テキストサブセット）は WordPress では使わないこと。投稿本文の文字が欠けます。
 
 方式が決まったら、使用するフォントを質問してください。
 `~/.claude/scripts/fonts-list.txt` の一覧を表示し、番号とウェイトを入力してもらいます。
@@ -77,6 +77,7 @@
 ### ローカルの場合:
 - `bash ~/.claude/scripts/download-fonts.sh --local "フォント名" "ウェイト"` を実行
 - `src/sass/global/_setting.scss` の `--font-family-base` を更新
+- `styles.scss` から `@use 'foundation/font-face';` されているか確認
 
 `--font-family-base` のフォールバック指定:
 - ゴシック系: `'フォント名', '欧文フォント名', sans-serif`

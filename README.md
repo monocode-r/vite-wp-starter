@@ -101,13 +101,16 @@ WordPress と Vite はオリジンが違うため、`server.origin` を指定し
 スターターはフォントを同梱していません（案件ごとに違うため）。Claude Code で `/font` を実行してください。
 指定するまでは `--font-family-base` がシステムフォントのままです。
 
-| モード | コマンド例 | 出力 |
-|--------|-----------|------|
-| CDN | `/font "Noto Sans JP" "400,700"` | `<link>` タグを表示 |
-| ローカル | `/font --local "Noto Sans JP" "400,700"` | woff2 DL + `_font-face.scss` 生成 |
+| モード | コマンド例 | リポジトリ | 転送量 |
+|--------|-----------|-----------|--------|
+| CDN | `/font "Noto Sans JP" "400,700"` | 0 | 数十KB |
+| チャンク | `/font --local "Noto Sans JP" "400,700"` | 約5MB/ウェイト | 数十KB |
+| 全グリフ | `/font --full "Noto Sans JP" "400,700"` | 約1MB/ウェイト | 約1MB |
 
-ローカル方式は日本語フォントだと1ウェイト約1MB（サブセット無しの全グリフ）になります。
-サブセット化しないなら CDN を選んでください。Google Fonts は `unicode-range` で分割配信するため実質数十KBです。
+`@font-face` 必須の指定が無ければ CDN、必須なら `--local`（`unicode-range` 分割を持ち帰る方式）。
+
+**WordPress では `--text`（テキストサブセット）を使わないでください。** 投稿・固定ページの本文は
+ビルド時に存在しないため、後から追加された文字が表示できなくなります。
 
 ## 自動デプロイ（GitHub Actions）
 
