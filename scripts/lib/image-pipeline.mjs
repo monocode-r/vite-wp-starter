@@ -1,4 +1,4 @@
-import { readFile, writeFile, access, unlink, mkdir, copyFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, access, mkdir, copyFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import fg from 'fast-glob';
 import imagemin from 'imagemin';
@@ -34,9 +34,16 @@ async function pathExists(p) {
 }
 
 /**
+ * src の画像を最適化して out へ出力する。
+ *
+ * - `webp-only`: WebP だけを出力（元の jpg/png は書き出さない）
+ * - `both`: 最適化した jpg/png と WebP の両方
+ * - `raster-only`: 最適化した jpg/png のみ
+ *
+ * WebP は必ず元データから変換する（最適化済みラスタ経由だと非可逆エンコードが2回かかる）。
+ * SVG は svgo、その他のファイルはそのままコピーする。
+ *
  * @param {{ sourceDir: string, outDir: string, mode: 'webp-only' | 'both' | 'raster-only', clean?: boolean, label?: string }} opts
- * - 同一ディレクトリ（in-place 最適化）: 上書き・webp-only 時は元ラスタ削除
- * - 別ディレクトリ: 既定では出力先を一度空にしてから src 相当を再生成する。
  *   `clean: false` にすると出力先を消さない（ビルド時に Vite が出力した資産を残すため）
  */
 export async function runImagePipeline({
@@ -73,18 +80,9 @@ export async function runImagePipeline({
     await mkdir(path.dirname(to), { recursive: true });
     const buf = await readFile(from);
     const ext = path.extname(rel).toLowerCase();
-    let out;
 
-    if (ext === '.jpg' || ext === '.jpeg') {
-      out = await imagemin.buffer(buf, {
-        plugins: [imageminMozjpeg({ quality: 80 })],
-      });
-    } else if (ext === '.png') {
-      out = await imagemin.buffer(buf, {
-        plugins: [imageminPngquant({ quality: [0.65, 0.8] })],
-      });
-    } else if (ext === '.svg') {
-      out = await imagemin.buffer(buf, {
+    if (ext === '.svg') {
+      const out = await imagemin.buffer(buf, {
         plugins: [
           imageminSvgo({
             plugins: [
@@ -96,11 +94,31 @@ export async function runImagePipeline({
           }),
         ],
       });
-    } else {
+      await writeFile(to, out);
       continue;
     }
 
-    await writeFile(to, out);
+    // WebP は元データから1回だけ変換する。
+    // 最適化済みラスタを変換元にすると非可逆エンコードが2回かかり、画質を捨てる
+    if (mode !== 'raster-only') {
+      const webpBuf = await imagemin.buffer(buf, {
+        plugins: [imageminWebp({ quality: 90 })],
+      });
+      await writeFile(to.replace(/\.(jpe?g|png)$/i, '.webp'), webpBuf);
+    }
+
+    // 元のラスタも配信するモードのときだけ最適化して書き出す
+    if (mode !== 'webp-only') {
+      const out =
+        ext === '.png'
+          ? await imagemin.buffer(buf, {
+              plugins: [imageminPngquant({ quality: [0.65, 0.8] })],
+            })
+          : await imagemin.buffer(buf, {
+              plugins: [imageminMozjpeg({ quality: 80 })],
+            });
+      await writeFile(to, out);
+    }
   }
 
   const allRel = await fg(['**/*'], {
@@ -120,32 +138,5 @@ export async function runImagePipeline({
     }
     await mkdir(path.dirname(to), { recursive: true });
     await copyFile(from, to);
-  }
-
-  if (mode === 'raster-only') {
-    return;
-  }
-
-  // src から出力した分だけを対象にする。出力先を丸ごと拾うと、SCSS / JS 経由で
-  // Vite が出した画像まで WebP 化して webp-only では消してしまう
-  const rasters = rasterSvgRel
-    .filter((rel) => /\.(jpe?g|png)$/i.test(rel))
-    .map((rel) => path.join(outAbs, rel));
-
-  for (const file of rasters) {
-    const buf = await readFile(file);
-    const webpBuf = await imagemin.buffer(buf, {
-      plugins: [
-        imageminWebp({
-          quality: 85,
-        }),
-      ],
-    });
-    const webpPath = file.replace(/\.(jpe?g|png)$/i, '.webp');
-    await writeFile(webpPath, webpBuf);
-
-    if (mode === 'webp-only') {
-      await unlink(file);
-    }
   }
 }

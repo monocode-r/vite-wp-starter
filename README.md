@@ -138,6 +138,8 @@ GitHub リポジトリの **Settings > Secrets and variables > Actions** に以�
     基底クラスに PC 幅で負ける**（同一詳細度で後勝ち）事故が起きます
 - Sass は `sass-embedded`（Vite 6 既定の `modern-compiler` API で動作）
 - JS のビルドターゲットは browserslist（iOS 12 / Android 8）に合わせて `es2018` / `safari12`
+- WebP は元データから1回だけ変換します（最適化済みラスタから変換すると非可逆エンコードが
+  2回かかり、写真やグラデーションに帯が出ます）
 - 画像を SCSS や JS から `url()` で参照する場合は、`image-output.config.mjs` を
   `both` か `raster-only` にしてください（`webp-only` は元の JPG/PNG を残しません）
 - Prettier: 保存時に自動整形（VSCode + Prettier 拡張機能）
