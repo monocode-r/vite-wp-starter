@@ -116,6 +116,9 @@ WordPress と Vite はオリジンが違うため、`server.origin` を指定し
 
 検証環境への反映は `~/.claude/scripts/deploy-ftps.py` で行います。案件ごとに転送スクリプトを書かないでください。
 
+> **クライアントとリポジトリを共有する場合は、この節のスクリプトのパスを消してください。**
+> `~/.claude/scripts/deploy-ftps.py` → `deploy-ftps.py`（所在は手元だけに留める）。
+
 ### 1. 設定ファイルを置く
 
 リポジトリ直下に `.deploy-ftps.env` を作ります（`.gitignore` 対象）。
