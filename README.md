@@ -112,31 +112,6 @@ WordPress と Vite はオリジンが違うため、`server.origin` を指定し
 **WordPress では `--text`（テキストサブセット）を使わないでください。** 投稿・固定ページの本文は
 ビルド時に存在しないため、後から追加された文字が表示できなくなります。
 
-## 自動デプロイ（GitHub Actions）
-
-`main` ブランチへ push すると自動でビルド → FTP デプロイが実行されます。
-
-### 初回セットアップ
-
-GitHub リポジトリの **Settings > Secrets and variables > Actions** に以下を登録してください。
-
-#### Secrets（機密情報）
-
-| 名前 | 値の例 | 説明 |
-|------|--------|------|
-| `FTP_SERVER` | `sv12345.xserver.jp` | FTP サーバーホスト名 |
-| `FTP_USERNAME` | `user@example.com` | FTP ユーザー名 |
-| `FTP_PASSWORD` | `••••••••` | FTP パスワード |
-
-#### Variables（非機密情報）
-
-| 名前 | 値の例 | 説明 |
-|------|--------|------|
-| `THEME_NAME` | `my-theme` | テーマフォルダ名（`.env` の値と合わせる） |
-| `FTP_THEME_DIR` | `public_html/wp-content/themes/my-theme/` | サーバー上のテーマパス（末尾 `/` 必須） |
-
-> SFTP（ポート22）を使う場合は `.github/workflows/deploy.yml` の `FTP-Deploy-Action` に `protocol: sftp` を追加してください。
-
 ## 備考
 
 - PostCSS: `css-declaration-sorter` → `postcss-preset-env`（autoprefixer 内蔵）
