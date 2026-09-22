@@ -16,3 +16,7 @@ themes/*/.vite-hot
 
 # wp-env uploads
 uploads
+
+# 手動デプロイ（案件ごとの転送設定・転送済みハッシュ）
+.deploy-ftps.env
+.deployed.sha1

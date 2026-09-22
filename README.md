@@ -112,6 +112,65 @@ WordPress と Vite はオリジンが違うため、`server.origin` を指定し
 **WordPress では `--text`（テキストサブセット）を使わないでください。** 投稿・固定ページの本文は
 ビルド時に存在しないため、後から追加された文字が表示できなくなります。
 
+## 手動デプロイ（FTPS）
+
+検証環境への反映は `~/.claude/scripts/deploy-ftps.py` で行います。案件ごとに転送スクリプトを書かないでください。
+
+### 1. 設定ファイルを置く
+
+リポジトリ直下に `.deploy-ftps.env` を作ります（`.gitignore` 対象）。
+
+```
+LOCAL_ROOT=/Users/xxx/dev/{案件}/themes/{THEME_NAME}
+REMOTE_ROOT=/demo/wp-content/themes/{THEME_NAME}
+MANIFEST=/Users/xxx/dev/{案件}/.deployed.sha1
+INCLUDE_DIRS=assets acf-json inc template-parts
+INCLUDE_ROOT_PATTERNS=*.php style.css screenshot.png
+STAGING_MARKER=demo
+USE_FTPS=yes
+```
+
+**`INCLUDE_*` は送るものの列挙（ホワイトリスト）です。** 除外リスト方式にしないでください。
+作業ディレクトリには `src/` や `node_modules/`、確認用のスクショが混ざっており、
+「除外し忘れたものが公開サーバーに出る」事故は取り返しがつきません。
+
+`STAGING_MARKER` は `REMOTE_ROOT` に必ず含まれていなければならない文字列です。
+同じ FTP アカウントの直下に本番ディレクトリが同居している構成で、打ち間違いから本番を守ります。
+chroot されていて本番がそもそも見えない環境では空にします（未設定の警告は想定どおり）。
+
+資格情報はここに書きません。ホスト・ユーザー・パスワードは `~/.netrc` の1箇所に置きます。
+`machine` 行が複数あって別のホストが拾われる場合だけ、`FTP_HOST` で明示します。
+
+### 2. ビルドしてから転送
+
+```bash
+pnpm build                                        # themes/{THEME_NAME}/assets/ を更新
+
+python3 ~/.claude/scripts/deploy-ftps.py          # 既定は dry-run（送る対象を数えて表示するだけ）
+python3 ~/.claude/scripts/deploy-ftps.py --run    # 実際に転送
+```
+
+| オプション | 用途 |
+|-----------|------|
+| `--run` | 実際に転送する（付けなければ dry-run） |
+| `--force-all` | 差分判定を飛ばして全件送る |
+| `--extra <path>` | ホワイトリスト外のファイルを1件だけ追加する |
+| `--config <path>` | 設定ファイルを明示する（既定はカレントから上へ `.deploy-ftps.env` を探索） |
+
+差分は `MANIFEST`（SHA-1 の一覧）で判定し、転送後はリモートの**バイト数で照合**します。
+転送ツールの終了コードは成否の根拠になりません。
+
+### FTP では入らないもの
+
+**DB 側の情報はテーマを上げても反映されません。** 転送後に「効いていない」と見えたら、
+コードを疑う前にこの一覧を当ててください。
+
+- 固定ページのテンプレート割当
+- オプション（管理画面で入力するサイト共通設定などの値）
+- プラグインの有効化状態・投稿データ・タクソノミーの語
+
+これらは検証環境の管理画面で人が入れます。「上げたので反映されているはず」とは扱いません。
+
 ## 備考
 
 - PostCSS: `css-declaration-sorter` → `postcss-preset-env`（autoprefixer 内蔵）
