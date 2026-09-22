@@ -113,6 +113,39 @@ function phpFullReload() {
 }
 
 /**
+ * 中身が変わっていない出力は書き出さない。
+ *
+ * Vite は毎回すべての成果物を書き直すため、SCSS も JS も触っていないビルドで
+ * styles.css / main.js の更新日時だけが動く。FTP で差分を更新日時から判断する現場では、
+ * それだけで転送対象に入ってしまう。バイト列が同じものはバンドルから落とす。
+ */
+function skipUnchangedOutputs() {
+  return {
+    name: 'skip-unchanged-outputs',
+    apply: 'build',
+    // Vite の CSS 最終処理（vite:css-post）より後に比較する必要がある。
+    // 既定の実行順だと確定前の内容と突き合わせてしまい、変更があるのに
+    // 「同じ」と判定してバンドルから落とす＝変更が反映されない
+    enforce: 'post',
+    generateBundle: {
+      order: 'post',
+      handler(options, bundle) {
+        const outRoot = options.dir ?? path.dirname(options.file ?? '');
+        for (const [fileName, output] of Object.entries(bundle)) {
+          const to = path.resolve(outRoot, fileName);
+          if (!fs.existsSync(to)) continue;
+          const next =
+            output.type === 'asset' ? Buffer.from(output.source) : Buffer.from(output.code);
+          if (fs.readFileSync(to).equals(next)) {
+            delete bundle[fileName];
+          }
+        }
+      },
+    },
+  };
+}
+
+/**
  * 画像を src/images/ → themes/{THEME_NAME}/assets/images/ へ最適化しながら出力する。
  *
  * 開発・本番で同じ `runImagePipeline` を通す（経路を1本にする）。
@@ -132,6 +165,7 @@ function wpImages() {
         sourceDir: imagesSrcDir,
         outDir: imagesOutDir,
         mode,
+        clean: false,
         label: 'wp-images:dev',
       });
       server.watcher.add(imagesSrcDir);
@@ -141,6 +175,7 @@ function wpImages() {
           sourceDir: imagesSrcDir,
           outDir: imagesOutDir,
           mode,
+          clean: false,
           label: 'wp-images:dev',
         });
         server.ws.send({ type: 'full-reload', path: '*' });
@@ -149,8 +184,7 @@ function wpImages() {
     async closeBundle() {
       // dev サーバー終了時にも呼ばれるため、ビルド時だけ走らせる
       if (!isBuild) return;
-      // emptyOutDir で assets/ ごと消えた後に走る。SCSS / JS から参照されて
-      // Vite が出力した画像を消さないよう clean はしない
+      // SCSS / JS から参照されて Vite が出力した画像を消さないよう clean はしない
       await runImagePipeline({
         sourceDir: imagesSrcDir,
         outDir: imagesOutDir,
@@ -170,7 +204,14 @@ export default defineConfig({
   base: './',
   root: __dirname,
   publicDir: false,
-  plugins: [sassGlobImports(), sassPartialHmr(), viteWordPressHot(), phpFullReload(), wpImages()],
+  plugins: [
+    sassGlobImports(),
+    sassPartialHmr(),
+    viteWordPressHot(),
+    phpFullReload(),
+    wpImages(),
+    skipUnchangedOutputs(),
+  ],
   server: {
     port: devPort,
     strictPort: true,
@@ -196,7 +237,10 @@ export default defineConfig({
   },
   build: {
     outDir: assetsDir,
-    emptyOutDir: true,
+    // assets/ を毎回空にすると、中身が変わっていないファイルまで作り直されて更新日時が動く。
+    // FTP で差分を更新日時から判断するため、消さずに上書き（image-pipeline 側は差分のみ書き込む）。
+    // 出力名は固定なので古い成果物は残らない。ソース自体を消したときだけ出力側も手で消すこと。
+    emptyOutDir: false,
     cssCodeSplit: false,
     minify: false,
     cssMinify: false,

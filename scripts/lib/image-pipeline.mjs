@@ -1,4 +1,4 @@
-import { readFile, writeFile, access, mkdir, copyFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, access, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import fg from 'fast-glob';
 import imagemin from 'imagemin';
@@ -31,6 +31,22 @@ async function pathExists(p) {
   } catch {
     return false;
   }
+}
+
+/**
+ * 中身が変わっていなければ書き込まない。
+ *
+ * 毎回 writeFile すると、バイト列が同一でも更新日時だけが動く。
+ * FTP で差分を更新日時から判断する現場では、それだけで全ファイルが転送対象になる。
+ * 「実際に差し替えたものだけ日付が新しい」状態を保つため、書く前に必ず比較する。
+ */
+async function writeIfChanged(to, buf) {
+  if (await pathExists(to)) {
+    const current = await readFile(to);
+    if (current.equals(buf)) return false;
+  }
+  await writeFile(to, buf);
+  return true;
 }
 
 /**
@@ -94,7 +110,7 @@ export async function runImagePipeline({
           }),
         ],
       });
-      await writeFile(to, out);
+      await writeIfChanged(to, out);
       continue;
     }
 
@@ -104,7 +120,7 @@ export async function runImagePipeline({
       const webpBuf = await imagemin.buffer(buf, {
         plugins: [imageminWebp({ quality: 90 })],
       });
-      await writeFile(to.replace(/\.(jpe?g|png)$/i, '.webp'), webpBuf);
+      await writeIfChanged(to.replace(/\.(jpe?g|png)$/i, '.webp'), webpBuf);
     }
 
     // 元のラスタも配信するモードのときだけ最適化して書き出す
@@ -117,7 +133,7 @@ export async function runImagePipeline({
           : await imagemin.buffer(buf, {
               plugins: [imageminMozjpeg({ quality: 80 })],
             });
-      await writeFile(to, out);
+      await writeIfChanged(to, out);
     }
   }
 
@@ -137,6 +153,6 @@ export async function runImagePipeline({
       continue;
     }
     await mkdir(path.dirname(to), { recursive: true });
-    await copyFile(from, to);
+    await writeIfChanged(to, await readFile(from));
   }
 }
