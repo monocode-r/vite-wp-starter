@@ -5,13 +5,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadEnv } from 'vite';
+import { resolveTheme } from './lib/theme-paths.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
-const env = loadEnv('', projectRoot, '');
-const themeName = env.THEME_NAME || 'my-theme';
+const { env, themeName } = resolveTheme(projectRoot);
 const wpPort = Number(env.WP_PORT) || 8888;
 
 const wpEnv = {

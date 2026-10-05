@@ -1,16 +1,15 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { access } from 'node:fs/promises';
-import { loadEnv } from 'vite';
 import { resolveImageOutputMode, runImagePipeline } from './lib/image-pipeline.mjs';
+import { resolveTheme } from './lib/theme-paths.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
-const env = loadEnv('', projectRoot, '');
-const themeName = env.THEME_NAME || 'my-theme';
+const { themeName, themeDir } = resolveTheme(projectRoot);
 const srcImages = path.join(projectRoot, 'src/images');
-const assetsImages = path.join(projectRoot, `themes/${themeName}/assets/images`);
+const assetsImages = path.join(themeDir, 'assets/images');
 
 async function pathExists(p) {
   try {

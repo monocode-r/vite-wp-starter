@@ -1,18 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, normalizePath, loadEnv } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import sassGlobImports from 'vite-plugin-sass-glob-import';
 import { runImagePipeline, resolveImageOutputMode } from './scripts/lib/image-pipeline.mjs';
+import { resolveTheme } from './scripts/lib/theme-paths.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sassRoot = normalizePath(path.resolve(__dirname, 'src/sass'));
 const stylesScssPath = normalizePath(path.resolve(sassRoot, 'styles.scss'));
 
-// .env から設定を取得
-const env = loadEnv('', __dirname, '');
-const themeName = env.THEME_NAME || 'my-theme';
-const themeDir = path.resolve(__dirname, `themes/${themeName}`);
+const { env, layout, themeDir } = resolveTheme(__dirname);
 const assetsDir = path.resolve(themeDir, 'assets');
 const imagesSrcDir = path.resolve(__dirname, 'src/images');
 const imagesOutDir = path.resolve(assetsDir, 'images');
@@ -20,6 +18,8 @@ const imagesOutDir = path.resolve(assetsDir, 'images');
 const devPort = Number(env.DEV_PORT) || 3000;
 const wpPort = Number(env.WP_PORT) || 8888;
 const devOrigin = `http://localhost:${devPort}`;
+// Local 配置ではサイトのポートを Local が採番するので、WP_URL が無ければ開かない
+const wpUrl = env.WP_URL || (layout === 'wp-env' ? `http://localhost:${wpPort}` : false);
 
 // ============================================================
 // カスタムプラグイン
@@ -219,7 +219,7 @@ export default defineConfig({
     // WordPress（別オリジン）から読み込むため、CSS 内の url() をオリジン込みで出力させる。
     // 無いとセルフホストのフォント・画像が dev だけ 404 になる
     origin: devOrigin,
-    open: `http://localhost:${wpPort}`,
+    open: wpUrl,
     watch: {
       // ビルド出力（画像コピー先）を監視対象から外す
       ignored: [`${normalizePath(assetsDir)}/**`],

@@ -42,7 +42,8 @@ pnpm dev
 
 | 変数名 | 説明 | 既定値 |
 |--------|------|--------|
-| `THEME_NAME` | テーマフォルダ名 | `my-theme` |
+| `THEME_NAME` | テーマフォルダ名 | `themes/` 直下のテーマが1つならそれ（複数ならエラー） |
+| `WP_URL` | `pnpm dev` で開く URL（Local 配置用） | wp-env 配置は `http://localhost:{WP_PORT}` |
 | `DEV_PORT` | Vite 開発サーバーのポート | `3000` |
 | `WP_PORT` | wp-env（WordPress）のポート | `8888` |
 
@@ -72,6 +73,27 @@ src/
 ├── images/         … 最適化 + WebP 変換してテーマへ出力（開発・ビルドで同じ経路）
 └── fonts/          … ローカルフォント（@font-face 用）
 ```
+
+### Local のインストール内に置く場合（`_dev/<テーマ名>/`）
+
+既存の WordPress（Local by Flywheel など）の `wp-content/themes/` を git 管理するときは、
+開発環境をテーマと分けて置きます。サーバーへ上げるテーマに `src/` や `node_modules/` を混ぜないためです。
+
+```
+wp-content/themes/          … git ルート
+├── docs/                   … 案件共通の資料（サーバーへ上げない）
+├── _dev/
+│   └── {テーマ名}/         … このスターター一式（themes/・uploads/・.wp-env.json は除く）
+└── {テーマ名}/             … テーマ本体。サーバーへ上げるのはここだけ
+```
+
+- 親ディレクトリが `_dev` なら自動でこの配置と判定し、テーマ名はディレクトリ名から取ります（`THEME_NAME` は不要）
+- WordPress は Local が動かすので、`package.json` の `dev` は `vite` だけにします（wp-env は使わない）
+- ブラウザで開く URL は `.env` の `WP_URL`（例: `http://localhost:10018`）。未設定なら開きません
+
+テーマ名を決められないとき（`THEME_NAME` が読めず `themes/` 直下に候補が複数ある等）は、
+既定値に落とさずエラーで止まります。`.env` はサンドボックス内では読めず、黙って別ディレクトリへ
+出力される事故が起きたためです。
 
 ## Vite × WordPress 連携の仕組み
 
