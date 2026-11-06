@@ -33,15 +33,17 @@ $breakpoints: (
 );
 
 // メディアクエリ
+// em で書くのは、ブラウザの文字サイズ設定を大きくした人に SP レイアウトを出すため。
+// px のままだと PC デザイン（rem 組み）が文字ごと拡大されて横にはみ出す。既定 16px では px と同値
 @mixin mq($mediaquery: md) {
   @if $design-approach == 'sp' {
     // モバイルファースト: min-width
-    @media screen and (min-width: #{map.get($breakpoints,$mediaquery)}px) {
+    @media screen and (min-width: #{math.div(map.get($breakpoints,$mediaquery), 16)}em) {
       @content;
     }
   } @else if $design-approach == 'pc' {
     // デスクトップファースト: max-width
-    @media screen and (max-width: #{map.get($breakpoints,$mediaquery) - 1}px) {
+    @media screen and (max-width: #{math.div(map.get($breakpoints,$mediaquery) - 1, 16)}em) {
       @content;
     }
   }

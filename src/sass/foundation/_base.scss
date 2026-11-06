@@ -1,3 +1,4 @@
+@use 'sass:math';
 @use 'global' as *;
 
 // インナー幅＋余白
@@ -9,7 +10,7 @@ $breakpointInner: $innerWidth + strip-unit($padding-pc) * 2;
   font-size: 100%;
 
   // ~ 375px
-  @media (max-width: 375px) {
+  @media (max-width: 23.4375em) {
     font-size: vw(375, 16);
   }
 
@@ -19,7 +20,7 @@ $breakpointInner: $innerWidth + strip-unit($padding-pc) * 2;
   }
 
   // インナー幅＋余白 ~
-  @media (min-width: $breakpointInner) {
+  @media (min-width: #{math.div(strip-unit($breakpointInner), 16)}em) {
     font-size: 100%;
   }
 }

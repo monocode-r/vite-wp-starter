@@ -50,7 +50,7 @@ function initSubMenuAccordion() {
       e.preventDefault();
       e.stopPropagation();
 
-      if (window.matchMedia('(min-width: 768px)').matches) return;
+      if (window.matchMedia('(min-width: 48em)').matches) return;
 
       const subMenu = this.closest('.sub-menu');
       const subMenuWrap = subMenu.querySelector('.sub-menu__wrap');
@@ -125,7 +125,7 @@ export class Header {
 window.addEventListener(
   'resize',
   throttle(function () {
-    if (window.matchMedia('(min-width: 768px)').matches) {
+    if (window.matchMedia('(min-width: 48em)').matches) {
       const toggleButtons = document.querySelectorAll('.js-sub-menu-toggle');
       const subMenuWraps = document.querySelectorAll('.sub-menu__wrap');
 

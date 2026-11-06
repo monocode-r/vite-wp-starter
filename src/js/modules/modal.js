@@ -19,7 +19,7 @@ export class Modal {
       target.addEventListener('click', (e) => {
         e.preventDefault();
 
-        if (window.matchMedia('(min-width: 768px)').matches) return;
+        if (window.matchMedia('(min-width: 48em)').matches) return;
 
         const container = target.closest('.js-modal-container');
         const img = container ? container.querySelector('.js-modal-target-img') : null;

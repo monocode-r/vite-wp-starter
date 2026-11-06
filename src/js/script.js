@@ -17,7 +17,7 @@
 const moduleFiles = import.meta.glob('./modules/*.js', { eager: true });
 
 function bootstrap() {
-  for (const [path, mod] of Object.entries(moduleFiles)) {
+  for (const mod of Object.values(moduleFiles)) {
     // ファイル内の全エクスポートを走査
     for (const exported of Object.values(mod)) {
       if (typeof exported?.init !== 'function') continue;

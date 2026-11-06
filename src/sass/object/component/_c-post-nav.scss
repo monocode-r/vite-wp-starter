@@ -5,6 +5,9 @@
 // 詳細ページ用 前後ナビゲーション
 // ============================================================
 
+// .nav-links / .nav-previous / .nav-next は the_post_navigation() が出力する WordPress のクラス
+/* stylelint-disable selector-class-pattern */
+
 .c-post-nav {
   margin-top: rem(64);
   border-top: 1px solid var(--color-border-light);
@@ -28,14 +31,14 @@
     gap: rem(4);
   }
 
-  .nav-label {
+  &__label {
     display: block;
     font-size: rem(12);
     color: var(--color-text-muted);
     letter-spacing: 0.05em;
   }
 
-  .nav-title {
+  &__title {
     display: block;
     font-size: rem(15);
     font-weight: 700;
@@ -44,7 +47,7 @@
     transition: opacity 0.2s ease;
   }
 
-  a:hover .nav-title {
+  a:hover .c-post-nav__title {
     opacity: 0.6;
   }
 
